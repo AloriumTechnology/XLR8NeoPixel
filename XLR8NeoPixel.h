@@ -38,6 +38,38 @@
              have a pretty big design for that to happen because they default
              to using different sections of that memory as widely spaced as
              possible.
+ 
+ Usage
+ The XLR8NeoPixel library can be a drop in replacement for the standard Adafruit
+   NeoPixel library. It is common for other libraries, such as Adafruit_NeoMatrix,
+   to build on the Adafruit_NeoPixel library and with just three lines added to
+   the top of your sketch, it is possible to get the XLR8 advantages used by those 
+   libraries as well. For example,
+        // 3 new lines added
+        #include <XLR8NeoPixel.h>
+        #define Adafruit_NeoPixel XLR8NeoPixel
+        #define ADAFRUIT_NEOPIXEL_H
+        // Existing lines kept
+        #include <Adafruit_GFX.h>
+        #include <Adafruit_NeoMatrix.h>
+        #include <Adafruit_NeoPixel.h>
+  As explanation, working from the bottom up:
+  -Including Adafruit_NeoPixel.h remains because other library files that we
+    are using but are not modifying (Adafruit_NeoMatrix.h in this case) have
+    #include <Adafruit_NeoPixel.h>. The way Arduino handles compiling and linking
+    generally requires that lower level #includes also be included in the sketch.
+  -Including Adafruit_NeoMatrix remains because that is the library that this
+    particular sketch is using
+  -Including Adafruit_GFX remains for the same reason that it was there initially.
+    It is included by Adafruit_NeoMatrix, and the way Arduino handles compiling and
+    linking generally requires that lower level #includes also be included in the sketch.
+  -Even though we are still including the Adafruit_NeoPixel.h, adding
+    #define ADAFRUIT_NEOPIXEL_H causes that header file to appear empty instead of
+    having the actual Adafruit library code.
+  -By adding #define Adafruit_NeoPixel XLR8NeoPixel, any place in your sketch, or
+    in the libraries that your sketch is using, where an Adafruit_NeoPixel string
+    is instantiated, it will instantiate an XLR8NeoPixel string instead.
+  -And of course, the XLR8NeoPixel library is included.
 
 
   XLR8 NeoPixel is free software: you can redistribute it and/or modify
