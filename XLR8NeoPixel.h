@@ -1,9 +1,10 @@
 /*--------------------------------------------------------------------
   This file is part of the Alorium Technology XLR8 NeoPixel library.
-  Written by Matt Weber (linkedin.com/in/mattweber0) / Alorium Technology
-    using the same interface as the Adafruit_NeoPixel library by Phil
-    Burgess, but the XLR8 implementation is modified to take
-    advantage of the FPGA hardware acceleration available on the XLR8 board.
+  Written by Matt Weber (Matthew.D.Weber@ieee.org) of 
+    Alorium Technology (info@aloriumtech.com) using the same interface
+    as the Adafruit_NeoPixel library by Phil Burgess, but the XLR8
+    implementation is modified to take advantage of the FPGA hardware
+    acceleration available on the XLR8 board.
  
   Notable improvements include the following:
     show() does not disable interrupts, so everything else your sketch is
@@ -69,7 +70,8 @@
   -By adding #define Adafruit_NeoPixel XLR8NeoPixel, any place in your sketch, or
     in the libraries that your sketch is using, where an Adafruit_NeoPixel string
     is instantiated, it will instantiate an XLR8NeoPixel string instead.
-  -And of course, the XLR8NeoPixel library is included.
+  -And of course, the XLR8NeoPixel library is included. If you are coding only for
+    the XLR8 hardware, this is the only line you would need.
 
 
   XLR8 NeoPixel is free software: you can redistribute it and/or modify
@@ -88,8 +90,8 @@
   --------------------------------------------------------------------*/
 
 
-#ifndef XLR8NeoPixel_H
-#define XLR8NeoPixel_H
+#ifndef XLR8NEOPIXEL_H
+#define XLR8NEOPIXEL_H
 
 #if (ARDUINO >= 100)
  #include <Arduino.h>

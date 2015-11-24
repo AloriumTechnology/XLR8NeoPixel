@@ -4,8 +4,9 @@
   Currently handles 400 and 800 KHz bitstreams and is optimized for the
   Alorium Technology XLR8 board.
 
-  Written by Matt Weber (linkedin.com/in/mattweber0) / Alorium Technology
-   using the same interface as the Adafruit_NeoPixel library by Phil Burgess.
+ Written by Matt Weber (Matthew.D.Weber@ieee.org) of
+ Alorium Technology (info@aloriumtech.com) using the same interface
+ as the Adafruit_NeoPixel library by Phil Burgess.
 
   -------------------------------------------------------------------------
   This file is part of the XLR8 NeoPixel library.
