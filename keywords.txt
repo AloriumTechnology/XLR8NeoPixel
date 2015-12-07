@@ -1,5 +1,5 @@
 #######################################
-# Syntax Coloring Map For Adafruit_NeoPixel
+# Syntax Coloring Map For XLR8NeoPixel
 ####################################### 
 # Class
 #######################################
