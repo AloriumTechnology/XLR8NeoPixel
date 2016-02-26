@@ -1,6 +1,7 @@
 /*--------------------------------------------------------------------
+  Copyright (c) 2015 Alorim Technology.  All right reserved.
   This file is part of the Alorium Technology XLR8 NeoPixel library.
-  Written by Matt Weber (Matthew.D.Weber@ieee.org) of 
+  Written by Matt Weber (linkedin/in/mattweberdesign) of 
     Alorium Technology (info@aloriumtech.com) using the same interface
     as the Adafruit_NeoPixel library by Phil Burgess, but the XLR8
     implementation is modified to take advantage of the FPGA hardware
@@ -74,24 +75,28 @@
     the XLR8 hardware, this is the only line you would need.
 
 
-  XLR8 NeoPixel is free software: you can redistribute it and/or modify
+  This library is free software: you can redistribute it and/or modify
   it under the terms of the GNU Lesser General Public License as
   published by the Free Software Foundation, either version 3 of
   the License, or (at your option) any later version.
 
-  XLR8 NeoPixel is distributed in the hope that it will be useful,
+  This library is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU Lesser General Public License for more details.
 
   You should have received a copy of the GNU Lesser General Public
-  License along with XLR8 NeoPixel.  If not, see
+  License along with this library.  If not, see
   <http://www.gnu.org/licenses/>.
   --------------------------------------------------------------------*/
 
 
 #ifndef XLR8NEOPIXEL_H
 #define XLR8NEOPIXEL_H
+
+
+// #ARDUINO_XLR8 is passed from IDE to the compiler if XLR8 is selected properly
+#ifdef ARDUINO_XLR8
 
 #if (ARDUINO >= 100)
  #include <Arduino.h>
@@ -254,5 +259,9 @@ class XLR8NeoPixel {
   static uint64_t
     allcmdbufUsed;    // All instances combined of which cmdbuf locations used
 };
+
+#else
+#error "XLR8NeoPixel library requires Tools->Board->XLR8xxx selection. Install boards from https://github.com/AloriumTechnology/Arduino_Boards"
+#endif
 
 #endif // XLR8NeoPixel_H

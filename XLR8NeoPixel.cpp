@@ -1,69 +1,65 @@
 /*-------------------------------------------------------------------------
+  Copyright (c) 2015 Alorim Technology.  All right reserved.
   Arduino library to control a wide variety of WS2811- and WS2812-based RGB
   LED devices such as Adafruit FLORA RGB Smart Pixels and NeoPixel strips.
   Currently handles 400 and 800 KHz bitstreams and is optimized for the
   Alorium Technology XLR8 board.
 
- Written by Matt Weber (Matthew.D.Weber@ieee.org) of
+ Written by Matt Weber (linkedin.com/in/mattweberdesign) of
  Alorium Technology (info@aloriumtech.com) using the same interface
  as the Adafruit_NeoPixel library by Phil Burgess.
 
   -------------------------------------------------------------------------
   This file is part of the XLR8 NeoPixel library.
 
-  XLR8 NeoPixel is free software: you can redistribute it and/or modify
+  This library is free software: you can redistribute it and/or modify
   it under the terms of the GNU Lesser General Public License as
   published by the Free Software Foundation, either version 3 of
   the License, or (at your option) any later version.
 
-  XLR8 NeoPixel is distributed in the hope that it will be useful,
+  This library is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU Lesser General Public License for more details.
 
   You should have received a copy of the GNU Lesser General Public
-  License along with XLR8 NeoPixel.  If not, see
+  License along with this library.  If not, see
   <http://www.gnu.org/licenses/>.
   -------------------------------------------------------------------------*/
 
 #include "XLR8NeoPixel.h"
 
-// Architecture specific
-#if defined (__AVR_ATmega328P__)
-#  define CMDBUF_SIZE 64
-#  define COLOR_SIZE  (4*1024 - (CMDBUF_SIZE*4))
-#  define XLR8_NEOCR   _SFR_MEM8(0xF4)
-#  define XLR8_NEOD0   _SFR_MEM8(0xF5)
-#  define XLR8_NEOD1   _SFR_MEM8(0xF6)
-#  define XLR8_NEOD2   _SFR_MEM8(0xF7)
-#  define XLR8_NEOD01  _SFR_MEM16(0xF5)
-#  define XLR8_NEOPIN 4
-#  define XLR8_NEOCMD 0
-#  define XLR8_NEOPINMIN 1
-#  define XLR8_NEOPINMAX 13  // hardware actually could go up to 15 but 14&15 aren't connected
-#  define NEOCMD_NOOP  0x0   // no-op, but set PinNum/BusyID (it won't autoclear)
-#  define NEOCMD_GTSZ  0x1   // get memsize. D2=cmd buf size (entries), D1/D0= pixel mem size (bytes)
-#  define NEOCMD_SHOW  0x2   // show WS2812. D2=starting cmd buffer D1/D0=length (bytes)
-#  define NEOCMD_SHOW2 0x3   // show WS2811. D2=starting cmd buffer D1/D0=length (bytes)
-#  define NEOCMD_SCOL  0x8   // set color. D2=color value, D1/D0=memory address (autoincrement)
-#  define NEOCMD_SCBA  0x9   // set cmd buf entry-addr. D2=cmd buf addr, D1/D0=section start addr
-#  define NEOCMD_SCBL  0xA   // set cmd buf entry-length. D2=cmd buf addr, D1/D0=section length
-#  define NEOCMD_SCBB  0xB   // set cmd buf entry-brightness. D2=cmd buf addr, D1=reserved, D0=brightness
-#  define NEOCMD_GCOL  0xC   // get color. D2=color value, D1/D0=memory address (autoincrement)
-#  define NEOCMD_GCBA  0xD   // get cmd buf entry-addr. D2=cmd buf addr, D1/D0=section start addr
-#  define NEOCMD_GCBL  0xE   // get cmd buf entry-length. D2=cmd buf addr, D1/D0=section length
-#  define NEOCMD_GCBB  0xF   // get cmd buf entry-brightness. D2=cmd buf addr, D1=reserved, D0=brightness
-#else
-#   warning "XLR8NeoPixel not implemented for selected device"
-#endif
+#define CMDBUF_SIZE 64
+#define COLOR_SIZE  (4*1024 - (CMDBUF_SIZE*4))
+#define NEOCR   _SFR_MEM8(0xF4)
+#define NEOD0   _SFR_MEM8(0xF5)
+#define NEOD1   _SFR_MEM8(0xF6)
+#define NEOD2   _SFR_MEM8(0xF7)
+#define NEOD01  _SFR_MEM16(0xF5)
+#define NEOPIN 4
+#define NEOCMD 0
+#define NEOPINMIN 1
+#define NEOPINMAX 13  // hardware actually could go up to 15 but 14&15 aren't connected
+#define NEOCMD_NOOP  0x0   // no-op, but set PinNum/BusyID (it won't autoclear)
+#define NEOCMD_GTSZ  0x1   // get memsize. D2=cmd buf size (entries), D1/D0= pixel mem size (bytes)
+#define NEOCMD_SHOW  0x2   // show WS2812. D2=starting cmd buffer D1/D0=length (bytes)
+#define NEOCMD_SHOW2 0x3   // show WS2811. D2=starting cmd buffer D1/D0=length (bytes)
+#define NEOCMD_SCOL  0x8   // set color. D2=color value, D1/D0=memory address (autoincrement)
+#define NEOCMD_SCBA  0x9   // set cmd buf entry-addr. D2=cmd buf addr, D1/D0=section start addr
+#define NEOCMD_SCBL  0xA   // set cmd buf entry-length. D2=cmd buf addr, D1/D0=section length
+#define NEOCMD_SCBB  0xB   // set cmd buf entry-brightness. D2=cmd buf addr, D1=reserved, D0=brightness
+#define NEOCMD_GCOL  0xC   // get color. D2=color value, D1/D0=memory address (autoincrement)
+#define NEOCMD_GCBA  0xD   // get cmd buf entry-addr. D2=cmd buf addr, D1/D0=section start addr
+#define NEOCMD_GCBL  0xE   // get cmd buf entry-length. D2=cmd buf addr, D1/D0=section length
+#define NEOCMD_GCBB  0xF   // get cmd buf entry-brightness. D2=cmd buf addr, D1=reserved, D0=brightness
 
 // Define just one of the following
 //   XLR8HW594SAFE  - Workaround bug in our very first pass hardware
 //   XLR8HW594LUCKY - Partial workaround. Allows interrupts during show(), but pixel data could get corrupted if you're unlucky
 //   XLR8HW594NOT   - The most likely choice. Using later version of hardware. Allows interrupts during show() without any issues
 //#define XLR8HW594SAFE
-#define XLR8HW594LUCKY
-//#define XLR8HW594NOT
+//#define XLR8HW594LUCKY
+#define XLR8HW594NOT
 
 
 uint64_t XLR8NeoPixel::allcmdbufUsed = 0;    // Static variable shared by all instances
@@ -119,8 +115,8 @@ void XLR8NeoPixel::updateLength(uint16_t n) {
   numBytes = n * ((wOffset == rOffset) ? 3 : 4);
   // Check hardware capacity. Get size returns cmdbuf size (entries)
   //   in D2 and pixel color memory size (bytes) in D1/D0
-  XLR8_NEOCR = NEOCMD_GTSZ << XLR8_NEOCMD;
-  if (XLR8_NEOD01 >= numBytes) {
+  NEOCR = NEOCMD_GTSZ << NEOCMD;
+  if (NEOD01 >= numBytes) {
     clear();
     numLEDs = n;
   } else {
@@ -184,37 +180,37 @@ void XLR8NeoPixel::show(void) {
   // instance doesn't delay the next).
   
   // Check that another instance of this class isn't currently using the hardware
-  while((XLR8_NEOCR >> XLR8_NEOPIN) & 0xF); // wait for pin/busy to go to zero
+  while((NEOCR >> NEOPIN) & 0xF); // wait for pin/busy to go to zero
   
   // Set the pin number
-  XLR8_NEOCR = (pin << XLR8_NEOPIN) | (NEOCMD_NOOP << XLR8_NEOCMD);
+  NEOCR = (pin << NEOPIN) | (NEOCMD_NOOP << NEOCMD);
   // Set cmd buf entry-address of pixel data
-  XLR8_NEOD01 = pixelmemStart;
-  XLR8_NEOD2  = cmdbufStart;
-  XLR8_NEOCR  = (NEOCMD_SCBA << XLR8_NEOCMD);
+  NEOD01 = pixelmemStart;
+  NEOD2  = cmdbufStart;
+  NEOCR  = (NEOCMD_SCBA << NEOCMD);
   // Set cmd buf entry-length of pixel data
-  XLR8_NEOD01 = numBytes;
-  XLR8_NEOD2  = cmdbufStart;
-  XLR8_NEOCR  = (NEOCMD_SCBL << XLR8_NEOCMD);
+  NEOD01 = numBytes;
+  NEOD2  = cmdbufStart;
+  NEOCR  = (NEOCMD_SCBL << NEOCMD);
   // Set brightness
-  XLR8_NEOD0  = brightness;
-  XLR8_NEOD2  = cmdbufStart;
-  XLR8_NEOCR  = (NEOCMD_SCBB << XLR8_NEOCMD);
+  NEOD0  = brightness;
+  NEOD2  = cmdbufStart;
+  NEOCR  = (NEOCMD_SCBB << NEOCMD);
   // start the show
-  XLR8_NEOD01 = numBytes;
-  XLR8_NEOD2  = cmdbufStart;
+  NEOD01 = numBytes;
+  NEOD2  = cmdbufStart;
 #ifdef NEO_KHZ400 // 800 KHz check needed only if 400 KHz support enabled
   if(is800KHz) {
 #endif
-    XLR8_NEOCR  = (pin << XLR8_NEOPIN) | (NEOCMD_SHOW << XLR8_NEOCMD);
+    NEOCR  = (pin << NEOPIN) | (NEOCMD_SHOW << NEOCMD);
 #ifdef XLR8HW594SAFE
     noInterrupts();
-    while((XLR8_NEOCR >> XLR8_NEOPIN) & 0xF); // Workaround hardware bug. wait for pin/busy to go to zero
+    while((NEOCR >> NEOPIN) & 0xF); // Workaround hardware bug. wait for pin/busy to go to zero
     interrupts();
     endTime = micros();
 #endif
 #ifdef XLR8HW594LUCKY
-    while((XLR8_NEOCR >> XLR8_NEOPIN) & 0xF); // Workaround hardware bug. wait for pin/busy to go to zero
+    while((NEOCR >> NEOPIN) & 0xF); // Workaround hardware bug. wait for pin/busy to go to zero
     endTime = micros();
 #endif
 #ifdef XLR8HW594NOT
@@ -222,15 +218,15 @@ void XLR8NeoPixel::show(void) {
 #endif
 #ifdef NEO_KHZ400 // 800 KHz check needed only if 400 KHz support enabled
   } else {
-    XLR8_NEOCR  = (pin << XLR8_NEOPIN) | (NEOCMD_SHOW << XLR8_NEOCMD);
+    NEOCR  = (pin << NEOPIN) | (NEOCMD_SHOW << NEOCMD);
  #ifdef XLR8HW594SAFE
     noInterrupts();
-    while((XLR8_NEOCR >> XLR8_NEOPIN) & 0xF); // Workaround hardware bug. wait for pin/busy to go to zero
+    while((NEOCR >> NEOPIN) & 0xF); // Workaround hardware bug. wait for pin/busy to go to zero
     interrupts();
     endTime = micros();
  #endif
  #ifdef XLR8HW594LUCKY
-    while((XLR8_NEOCR >> XLR8_NEOPIN) & 0xF); // Workaround hardware bug. wait for pin/busy to go to zero
+    while((NEOCR >> NEOPIN) & 0xF); // Workaround hardware bug. wait for pin/busy to go to zero
     endTime = micros();
  #endif
  #ifdef XLR8HW594NOT
@@ -246,7 +242,7 @@ void XLR8NeoPixel::setPin(uint8_t p) {
     while(!canShow()); // make sure full transfer to NeoPixel is done before shutting off
     pinMode(pin, INPUT); // if switching pins, shut off the previous one
   }
-  if((p >= XLR8_NEOPINMIN) && (p <= XLR8_NEOPINMAX)) {
+  if((p >= NEOPINMIN) && (p <= NEOPINMAX)) {
     pin = p;
     if(begun) {
       pinMode(p, OUTPUT);
@@ -259,22 +255,22 @@ void XLR8NeoPixel::setPin(uint8_t p) {
 void XLR8NeoPixel::setColorByte(uint16_t n, uint8_t v) const {
   uint16_t memloc = pixelmemStart + n;
   if (memloc >= COLOR_SIZE) {memloc -= COLOR_SIZE;}
-  XLR8_NEOD2 = v;
-  XLR8_NEOD01 = memloc;
-  XLR8_NEOCR = NEOCMD_SCOL << XLR8_NEOCMD;
+  NEOD2 = v;
+  NEOD01 = memloc;
+  NEOCR = NEOCMD_SCOL << NEOCMD;
 }
 // Just get one part of the color
 uint8_t XLR8NeoPixel::getColorByte(uint16_t n) const {
   uint16_t memloc = pixelmemStart + n;
   if (memloc >= COLOR_SIZE) {memloc -= COLOR_SIZE;}
-  XLR8_NEOD01 = memloc;
-  XLR8_NEOCR = NEOCMD_GCOL << XLR8_NEOCMD;
-  return XLR8_NEOD2;
+  NEOD01 = memloc;
+  NEOCR = NEOCMD_GCOL << NEOCMD;
+  return NEOD2;
 }
 
 // Set pixel color from separate R,G,B components:
 void XLR8NeoPixel::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
-  //while((XLR8_NEOCR >> XLR8_NEOPIN) & 0xF) == pin); // If we're currently doing show(), let it finish?
+  //while((NEOCR >> NEOPIN) & 0xF) == pin); // If we're currently doing show(), let it finish?
   if(n < numLEDs) {
     uint16_t p;
     if(wOffset == rOffset) { // Is an RGB-type strip
@@ -324,18 +320,18 @@ void XLR8NeoPixel::setAllPixels(uint32_t c) {
                              ((c >> 8  & 0xFF) << 8*gOffset) | 
                              ((c       & 0xFF) << 8*bOffset) | 
                              ((c >> 24 & 0xFF) << 8*temp_wOffset); 
-  //while((XLR8_NEOCR >> XLR8_NEOPIN) & 0xF) == pin); // If we're currently doing show(), let it finish?
-  XLR8_NEOD01 = pixelmemStart; // start address, autoincrements, and autowraps
+  //while((NEOCR >> NEOPIN) & 0xF) == pin); // If we're currently doing show(), let it finish?
+  NEOD01 = pixelmemStart; // start address, autoincrements, and autowraps
   for(uint16_t i=0; i<numLEDs; i++) {
-    XLR8_NEOD2 = (colors_in_order & 0xFF);
-    XLR8_NEOCR = NEOCMD_SCOL << XLR8_NEOCMD;
-    XLR8_NEOD2 = ((colors_in_order >> 8) & 0xFF);
-    XLR8_NEOCR = NEOCMD_SCOL << XLR8_NEOCMD;
-    XLR8_NEOD2 = ((colors_in_order >> 16) & 0xFF);
-    XLR8_NEOCR = NEOCMD_SCOL << XLR8_NEOCMD;
+    NEOD2 = (colors_in_order & 0xFF);
+    NEOCR = NEOCMD_SCOL << NEOCMD;
+    NEOD2 = ((colors_in_order >> 8) & 0xFF);
+    NEOCR = NEOCMD_SCOL << NEOCMD;
+    NEOD2 = ((colors_in_order >> 16) & 0xFF);
+    NEOCR = NEOCMD_SCOL << NEOCMD;
     if(wOffset != rOffset) {    // 4 bytes per pixel
-      XLR8_NEOD2 = ((colors_in_order >> 24) & 0xFF);
-      XLR8_NEOCR = NEOCMD_SCOL << XLR8_NEOCMD;
+      NEOD2 = ((colors_in_order >> 24) & 0xFF);
+      NEOCR = NEOCMD_SCOL << NEOCMD;
     }
   }
 }
@@ -404,11 +400,11 @@ uint8_t XLR8NeoPixel::getBrightness(void) const {
 }
 
 void XLR8NeoPixel::clear() {
-  //while((XLR8_NEOCR >> XLR8_NEOPIN) & 0xF) == pin); // If we're currently doing show(), let it finish?
-  XLR8_NEOD2 = 0;
-  XLR8_NEOD01 = pixelmemStart; // start address, autoincrements, and autowraps
+  //while((NEOCR >> NEOPIN) & 0xF) == pin); // If we're currently doing show(), let it finish?
+  NEOD2 = 0;
+  NEOD01 = pixelmemStart; // start address, autoincrements, and autowraps
   for(uint16_t i=0; i<numBytes; i++) {
-    XLR8_NEOCR = NEOCMD_SCOL << XLR8_NEOCMD;
+    NEOCR = NEOCMD_SCOL << NEOCMD;
   }
 }
 
@@ -473,8 +469,8 @@ bool XLR8NeoPixel::testAndSetAllCmdbuf(uint8_t i) {
   cli();
   // Check hardware capacity. Get size returns cmdbuf size (entries)
   //   in D2 and pixel color memory size (bytes) in D1/D0
-  XLR8_NEOCR = NEOCMD_GTSZ << XLR8_NEOCMD;
-  if (XLR8_NEOD2 <= i) {return true;}
+  NEOCR = NEOCMD_GTSZ << NEOCMD;
+  if (NEOD2 <= i) {return true;}
   // Looks okay, go ahead and do the test and set
   bool alreadySet = testAllCmdbuf(i);
   setAllCmdbuf(i);

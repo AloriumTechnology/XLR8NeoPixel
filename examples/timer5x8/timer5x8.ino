@@ -1,7 +1,8 @@
 
 /*--------------------------------------------------------------------
+  Copyright (c) 2015 Alorim Technology.  All right reserved.
   This file is part of the Alorium Technology XLR8 NeoPixel library.
-  Written by Matt Weber (Matthew.D.Weber@ieee.org) of 
+  Written by Matt Weber (linkedin.com/in/mattweberdesign) of 
     Alorium Technology (info@aloriumtech.com) 
     
   The example shows both how to use the XLR8 NeoPixel library and also
