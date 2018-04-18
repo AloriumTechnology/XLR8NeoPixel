@@ -1,11 +1,11 @@
 /*-------------------------------------------------------------------------
-  Copyright (c) 2015 Alorim Technology.  All right reserved.
+  Copyright (c) 2015 Alorium Technology.  All right reserved.
   Arduino library to control a wide variety of WS2811- and WS2812-based RGB
   LED devices such as Adafruit FLORA RGB Smart Pixels and NeoPixel strips.
   Currently handles 400 and 800 KHz bitstreams and is optimized for the
   Alorium Technology XLR8 board.
 
- Written by Matt Weber (linkedin.com/in/mattweberdesign) of
+ Written by Matt Weber (support@aloriumtech.com) of
  Alorium Technology (info@aloriumtech.com) using the same interface
  as the Adafruit_NeoPixel library by Phil Burgess.
 

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
-  Copyright (c) 2015 Alorim Technology.  All right reserved.
+  Copyright (c) 2015 Alorium Technology.  All right reserved.
   This file is part of the Alorium Technology XLR8 NeoPixel library.
-  Written by Matt Weber (linkedin/in/mattweberdesign) of 
+  Written by Matt Weber (support@aloriumtech.com) of 
     Alorium Technology (info@aloriumtech.com) using the same interface
     as the Adafruit_NeoPixel library by Phil Burgess, but the XLR8
     implementation is modified to take advantage of the FPGA hardware
@@ -173,7 +173,9 @@
 // the NEO_KHZ400 line to save a little space.
 
 #define NEO_KHZ800 0x0000 // 800 KHz datastream
+#ifndef __AVR_ATtiny85__
 #define NEO_KHZ400 0x0100 // 400 KHz datastream
+#endif
 
 // If 400 KHz support is enabled, the third parameter to the constructor
 // requires a 16-bit value (in order to select 400 vs 800 KHz speed).
@@ -181,9 +183,9 @@
 // is sufficient to encode pixel color order, saving some space.
 
 #ifdef NEO_KHZ400
-typedef uint8_t  neoPixelType;
+typedef uint16_t  neoPixelType;
 #else
-typedef uint16_t neoPixelType;
+typedef uint8_t neoPixelType;
 #endif
 
 class XLR8NeoPixel {
