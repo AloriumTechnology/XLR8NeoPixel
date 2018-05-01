@@ -5,3 +5,4 @@ For Arduino Uno compatible XLR8 board from Alorium Technology (www.aloriumtech.c
 
 This is a drop in replacement for Adafruit_NeoPixel library. If you have existing existing code and libraries, you can get the advantages of XLR8 by following the simple instructions found in XLR8NeoPixel.h
 
+Please note that the XLR8NeoPixel library allows control only on Digital pins 2 - 13.
